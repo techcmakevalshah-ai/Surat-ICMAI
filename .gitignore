@@ -1,0 +1,11 @@
+node_modules
+.next
+.env
+.env.local
+.vercel
+*.log
+.DS_Store
+# Do not commit student source files / personal data
+*.xlsx
+*.xls
+students-normalized.json
