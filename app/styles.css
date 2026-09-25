@@ -7,3 +7,7 @@
 .database-tabs button.active{border-color:#0b1f3a;background:#0b1f3a;color:#fff}
 .database-tabs button.active span{color:#cdd7e4}
 @media(max-width:650px){.database-tabs{grid-template-columns:1fr}.database-tabs button{padding:12px 14px}}
+
+.auth-switch{width:100%;margin-top:14px;border:0;background:transparent;color:#536176;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px}
+.auth-switch:hover{color:#0b1f3a}
+.pending-card .secondary-button{width:100%;justify-content:center}
