@@ -77,6 +77,10 @@ function normalizeDigits(value: string) {
     : digits
 }
 
+function looksLikePhoneQuery(value: string) {
+  return /^[+\d\s().-]+$/.test(value.trim())
+}
+
 function mapRows(rows: Row[], source: Student['source']): Student[] {
   return rows.map(row => ({
     id: row.id,
@@ -247,9 +251,10 @@ export default function Home() {
     const searches = [
       supabase.from(table).select(columns).ilike('student_name', `%${term}%`).limit(20),
       supabase.from(table).select(columns).ilike('registration_number', `%${term}%`).limit(20),
+      supabase.from(table).select(columns).ilike('email', `%${term}%`).limit(20),
     ]
 
-    if (digits.length >= 4) {
+    if (looksLikePhoneQuery(term) && digits.length >= 4) {
       searches.push(
         supabase.from(table).select(columns).ilike('mobile', `%${digits}%`).limit(20)
       )
@@ -482,7 +487,7 @@ export default function Home() {
                   <input
                     value={query}
                     onChange={e => setQuery(e.target.value)}
-                    placeholder="Name, mobile or registration no."
+                    placeholder="Name, email, mobile or registration no."
                     autoComplete="off"
                   />
                 </div>
