@@ -11,3 +11,48 @@
 .auth-switch{width:100%;margin-top:14px;border:0;background:transparent;color:#536176;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px}
 .auth-switch:hover{color:#0b1f3a}
 .pending-card .secondary-button{width:100%;justify-content:center}
+
+.top-actions{display:flex;align-items:center;gap:12px}
+.app-nav{display:flex;align-items:center;padding:4px;background:#f3f6f9;border:1px solid #e1e6ec;border-radius:12px}
+.app-nav button{height:34px;border:0;border-radius:8px;background:transparent;color:#657186;padding:0 11px;display:flex;align-items:center;gap:6px;font-weight:800;font-size:12px}
+.app-nav button.active{background:#0b1f3a;color:#fff;box-shadow:0 3px 10px rgba(11,31,58,.16)}
+.content-wide{width:min(100% - 32px,1040px)}
+.manage-card{background:#fff;border:1px solid #e2e7ed;border-radius:18px;padding:28px;box-shadow:0 14px 38px rgba(20,32,51,.07)}
+.add-course-row{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding-bottom:22px;border-bottom:1px solid #e7ebf0}
+.section-kicker{display:block;margin-bottom:8px;color:#8a681f;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em}
+.course-selector,.add-method-tabs{display:flex;align-items:center;gap:8px}
+.course-selector button,.add-method-tabs button{height:42px;border:1px solid #dfe5eb;border-radius:10px;background:#fff;color:#526075;padding:0 15px;font-weight:800}
+.course-selector button.active,.add-method-tabs button.active{border-color:#0b1f3a;background:#0b1f3a;color:#fff}
+.add-method-tabs button{display:inline-flex;align-items:center;gap:7px}
+.add-message{margin:20px 0 0}
+.student-form{margin-top:24px}
+.form-section-title h2,.template-box h2,.upload-box h2{margin:0 0 7px;color:#0b1f3a;font-size:21px}
+.form-section-title p,.template-box p,.upload-box p{margin:0;color:#6d7889;font-size:13px}
+.student-form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:22px}
+.field{display:grid;gap:7px}
+.field span{font-size:12px;font-weight:800;color:#334158}
+.field input{height:46px}
+.form-actions{display:flex;justify-content:flex-end;margin-top:22px}
+.action-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:160px}
+.excel-panel{display:grid;gap:18px;margin-top:24px}
+.template-box,.upload-box{border:1px solid #e3e8ee;border-radius:15px;padding:22px;background:#fafbfd}
+.template-box{display:flex;align-items:center;justify-content:space-between;gap:22px}
+.template-button{white-space:nowrap}
+.upload-box{display:grid;gap:18px}
+.file-drop{min-height:126px;border:1.5px dashed #cfd7e1;border-radius:13px;background:#fff;display:grid;place-items:center;align-content:center;gap:5px;text-align:center;color:#617086;cursor:pointer;padding:18px}
+.file-drop:hover{border-color:#b58a34;background:#fffcf5}
+.file-drop svg{color:#8a681f}
+.file-drop strong{color:#26354a}
+.file-drop span{font-size:11px;color:#8b95a2}
+.file-drop input{display:none}
+@media(max-width:760px){
+  .topbar{flex-wrap:wrap}
+  .top-actions{width:100%;justify-content:space-between}
+  .app-nav{flex:1}
+  .app-nav button{flex:1;justify-content:center}
+  .add-course-row,.template-box{align-items:stretch;flex-direction:column}
+  .student-form-grid{grid-template-columns:1fr}
+  .course-selector,.add-method-tabs{display:grid;grid-template-columns:1fr 1fr}
+  .course-selector button,.add-method-tabs button{justify-content:center}
+  .form-actions .action-button,.template-button{width:100%}
+}
