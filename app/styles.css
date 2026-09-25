@@ -56,3 +56,16 @@
   .course-selector button,.add-method-tabs button{justify-content:center}
   .form-actions .action-button,.template-button{width:100%}
 }
+
+.destination-block{display:grid;gap:6px}
+.destination-warning{font-size:11px;color:#9d2c2c;font-weight:700;margin-top:3px}
+.confirm-backdrop{position:fixed;inset:0;z-index:1000;background:rgba(5,16,31,.58);display:grid;place-items:center;padding:20px}
+.confirm-dialog{position:relative;width:min(100%,520px);background:#fff;border-radius:18px;padding:28px;box-shadow:0 28px 80px rgba(0,0,0,.3)}
+.confirm-dialog h2{margin:4px 0 10px;color:#0b1f3a;font-size:25px;line-height:1.25}
+.confirm-dialog p{margin:0;color:#687488}
+.confirm-close{position:absolute;top:16px;right:16px;width:34px;height:34px;border:1px solid #e2e7ed;border-radius:9px;background:#fff;color:#697487;display:grid;place-items:center}
+.confirm-destination{margin:20px 0 16px;padding:12px 14px;border-radius:10px;background:#f8f2e6;color:#6f5217;font-size:13px}
+.confirm-field input{text-transform:uppercase;font-weight:800;letter-spacing:.04em}
+.confirm-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
+.confirm-upload-button{height:40px;display:inline-flex;align-items:center;gap:7px}
+@media(max-width:650px){.confirm-actions{display:grid;grid-template-columns:1fr}.confirm-actions .secondary-button,.confirm-upload-button{width:100%;justify-content:center}}
