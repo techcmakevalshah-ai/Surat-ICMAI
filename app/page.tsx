@@ -19,6 +19,7 @@ import {
   UserPlus,
 } from 'lucide-react'
 import AddStudents from '@/app/AddStudents'
+import ChairmanBrand from '@/app/ChairmanBrand'
 import { createBrowserSupabase } from '@/lib/supabase-browser'
 
 type Level = 'foundation' | 'intermediate' | 'all'
@@ -580,6 +581,7 @@ export default function Home() {
             <AddStudents onChanged={loadCounts} />
           </>
         )}
+        <ChairmanBrand />
       </section>
     </main>
   )
