@@ -530,7 +530,6 @@ export default function Home() {
                     <div>
                       <span className="source-badge">{sourceLabel(selected.source)}</span>
                       <h2>{selected.studentName}</h2>
-                      <p>{selected.fatherHusbandName || 'Father / Husband name unavailable'}</p>
                     </div>
 
                     <button
