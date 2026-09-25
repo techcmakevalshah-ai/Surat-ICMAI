@@ -1,28 +1,32 @@
-# Student Registration Finder
+# Surat ICMAI — Student Registration Finder
 
-Standalone Next.js app for secure student registration lookup using Supabase and Vercel.
+Standalone Next.js student lookup application with Supabase Auth + Row Level Security.
 
-## Features
-- Team email/password login through Supabase Auth
-- Search by student name, mobile, or registration number
-- Displays FND/INTER source and complete student details
-- Student data is not bundled into frontend code
-- Search API verifies the signed-in user and active team profile server-side
-- RLS enabled; student tables are not readable directly by browser roles
-- Excel importer supports the INTER and FND workbook formats
+## Databases
+- Foundation: `foundation_students`
+- Intermediate: `intermediate_students`
 
-## Setup
-1. Create a new Supabase project.
-2. Run `supabase/schema.sql` in the SQL Editor.
-3. Create team users in Supabase Auth.
-4. Insert matching rows into `team_profiles` using each Auth user UUID.
-5. Copy `.env.example` to `.env.local` and add your project URL, publishable key and secret key.
-6. Install dependencies: `npm install`
-7. Import students:
-   `npm run import:students -- "/path/INTER 24-09-2026.xlsx" "/path/FND 24-09-2026.xlsx"`
-8. Run locally: `npm run dev`
-9. Import the repository into Vercel.
-10. Add the same 3 environment variables in Vercel and deploy.
+The two course datasets are stored separately.
 
-## Privacy
-Do not commit the Excel files or normalized student data. `.gitignore` excludes spreadsheet files.
+## Security model
+- Anyone may create a Supabase Auth account.
+- A new account gets **no student access** by default.
+- Only users with an active row in `team_profiles` can read student records.
+- RLS enforces this directly in PostgreSQL.
+- The app uses only the public Supabase URL and publishable key.
+- No service-role/secret key is needed in Vercel.
+
+## Team onboarding
+1. User chooses **Create a new team account** on the login page.
+2. User confirms their email if Supabase asks for confirmation.
+3. Admin approves the account by inserting its Auth UUID into `team_profiles`.
+4. User logs in and can search Foundation / Intermediate / All.
+
+## Student import
+For future Excel updates, set `SUPABASE_SECRET_KEY` locally and run:
+
+```bash
+npm run import:students -- "INTER.xlsx" "FND.xlsx"
+```
+
+Never commit Excel files or a Supabase secret key.
