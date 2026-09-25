@@ -573,6 +573,11 @@ export default function Home() {
                 </div>
               )}
             </section>
+            {hasSearched && (
+              <div className="search-brand-row">
+                <ChairmanBrand />
+              </div>
+            )}
           </>
         ) : (
           <>
@@ -584,7 +589,6 @@ export default function Home() {
             <AddStudents onChanged={loadCounts} />
           </>
         )}
-        {view === 'search' && hasSearched && <ChairmanBrand />}
       </section>
     </main>
   )
