@@ -117,6 +117,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null)
   const [copied, setCopied] = useState('')
+  const [hasSearched, setHasSearched] = useState(false)
 
   async function loadCounts() {
     const [foundation, intermediate] = await Promise.all([
@@ -230,6 +231,7 @@ export default function Home() {
     setSelected(null)
     setQuery('')
     setMessage(null)
+    setHasSearched(false)
     setView('search')
   }
 
@@ -284,6 +286,7 @@ export default function Home() {
       return
     }
 
+    setHasSearched(true)
     setLoading(true)
     setMessage(null)
     setSelected(null)
@@ -581,7 +584,7 @@ export default function Home() {
             <AddStudents onChanged={loadCounts} />
           </>
         )}
-        <ChairmanBrand />
+        {view === 'search' && hasSearched && <ChairmanBrand />}
       </section>
     </main>
   )
