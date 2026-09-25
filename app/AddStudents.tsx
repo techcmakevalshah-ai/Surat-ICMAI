@@ -9,6 +9,7 @@ import {
   PlusCircle,
   Save,
   Upload,
+  X,
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { createBrowserSupabase } from '@/lib/supabase-browser'
@@ -69,6 +70,10 @@ function courseLabel(course: Course) {
   return course === 'foundation' ? 'Foundation' : 'Intermediate'
 }
 
+function confirmationWord(course: Course) {
+  return course === 'foundation' ? 'FOUNDATION' : 'INTERMEDIATE'
+}
+
 function cleanText(value: unknown) {
   if (value === null || value === undefined) return null
   const cleaned = String(value).trim().replace(/^'/, '')
@@ -110,12 +115,23 @@ function normalizeDate(value: unknown) {
 
 export default function AddStudents({ onChanged }: { onChanged?: () => void }) {
   const supabase = useMemo(() => createBrowserSupabase(), [])
-  const [course, setCourse] = useState<Course>('foundation')
+  const [course, setCourse] = useState<Course | null>(null)
   const [mode, setMode] = useState<Mode>('manual')
   const [form, setForm] = useState(emptyForm)
   const [file, setFile] = useState<File | null>(null)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmText, setConfirmText] = useState('')
+  const [pendingRecords, setPendingRecords] = useState<StudentPayload[]>([])
+
+  function chooseCourse(next: Course) {
+    setCourse(next)
+    setMessage(null)
+    setConfirmOpen(false)
+    setConfirmText('')
+    setPendingRecords([])
+  }
 
   function downloadTemplate() {
     const sheet = XLSX.utils.aoa_to_sheet([HEADERS])
@@ -142,6 +158,14 @@ export default function AddStudents({ onChanged }: { onChanged?: () => void }) {
   async function saveManual(event: FormEvent) {
     event.preventDefault()
     setMessage(null)
+
+    if (!course) {
+      setMessage({
+        type: 'error',
+        text: 'Please select Foundation or Intermediate first.',
+      })
+      return
+    }
 
     const registration = cleanText(form.registrationNumber)
     const studentName = cleanText(form.studentName)
@@ -187,9 +211,17 @@ export default function AddStudents({ onChanged }: { onChanged?: () => void }) {
     onChanged?.()
   }
 
-  async function uploadExcel(event: FormEvent) {
+  async function prepareExcelUpload(event: FormEvent) {
     event.preventDefault()
     setMessage(null)
+
+    if (!course) {
+      setMessage({
+        type: 'error',
+        text: 'Please choose where you want to upload: Foundation or Intermediate.',
+      })
+      return
+    }
 
     if (!file) {
       setMessage({ type: 'error', text: 'Choose an Excel file first.' })
@@ -212,6 +244,7 @@ export default function AddStudents({ onChanged }: { onChanged?: () => void }) {
         range: 0,
         blankrows: false,
       })
+
       const actualHeaders = (headerRows[0] || []).map(value =>
         String(value ?? '').trim().toUpperCase()
       )
@@ -256,8 +289,37 @@ export default function AddStudents({ onChanged }: { onChanged?: () => void }) {
         )
       }
 
-      for (let i = 0; i < records.length; i += 100) {
-        const batch = records.slice(i, i + 100)
+      setPendingRecords(records)
+      setConfirmText('')
+      setConfirmOpen(true)
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Excel import failed.',
+      })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function confirmExcelUpload() {
+    if (!course || !pendingRecords.length) return
+
+    const expected = confirmationWord(course)
+    if (confirmText.trim().toUpperCase() !== expected) {
+      setMessage({
+        type: 'error',
+        text: `Type ${expected} exactly to confirm the upload.`,
+      })
+      return
+    }
+
+    setBusy(true)
+    setMessage(null)
+
+    try {
+      for (let i = 0; i < pendingRecords.length; i += 100) {
+        const batch = pendingRecords.slice(i, i + 100)
         const { error } = await supabase
           .from(tableFor(course))
           .upsert(batch, { onConflict: 'registration_number' })
@@ -265,13 +327,18 @@ export default function AddStudents({ onChanged }: { onChanged?: () => void }) {
         if (error) throw error
       }
 
+      const importedCount = pendingRecords.length
       setFile(null)
+      setPendingRecords([])
+      setConfirmOpen(false)
+      setConfirmText('')
+
       const input = document.getElementById('student-excel-file') as HTMLInputElement | null
       if (input) input.value = ''
 
       setMessage({
         type: 'success',
-        text: `${records.length} student${records.length === 1 ? '' : 's'} imported successfully into ${courseLabel(course)}.`,
+        text: `${importedCount} student${importedCount === 1 ? '' : 's'} imported successfully into ${courseLabel(course)}.`,
       })
       onChanged?.()
     } catch (error) {
@@ -287,30 +354,29 @@ export default function AddStudents({ onChanged }: { onChanged?: () => void }) {
   return (
     <section className="manage-card">
       <div className="add-course-row">
-        <div>
-          <span className="section-kicker">Destination database</span>
+        <div className="destination-block">
+          <span className="section-kicker">Where do you want to upload?</span>
           <div className="course-selector">
             <button
               type="button"
               className={course === 'foundation' ? 'active' : ''}
-              onClick={() => {
-                setCourse('foundation')
-                setMessage(null)
-              }}
+              onClick={() => chooseCourse('foundation')}
             >
               Foundation
             </button>
             <button
               type="button"
               className={course === 'intermediate' ? 'active' : ''}
-              onClick={() => {
-                setCourse('intermediate')
-                setMessage(null)
-              }}
+              onClick={() => chooseCourse('intermediate')}
             >
               Intermediate
             </button>
           </div>
+          {!course && (
+            <span className="destination-warning">
+              Select a destination before adding students.
+            </span>
+          )}
         </div>
 
         <div className="add-method-tabs">
@@ -320,6 +386,7 @@ export default function AddStudents({ onChanged }: { onChanged?: () => void }) {
             onClick={() => {
               setMode('manual')
               setMessage(null)
+              setConfirmOpen(false)
             }}
           >
             <PlusCircle size={16} />
@@ -353,8 +420,10 @@ export default function AddStudents({ onChanged }: { onChanged?: () => void }) {
           <div className="form-section-title">
             <h2>Add student manually</h2>
             <p>
-              Saving an existing registration number will update that student's
-              details instead of creating a duplicate.
+              {course
+                ? `This student will be saved in ${courseLabel(course)}.`
+                : 'First select Foundation or Intermediate above.'}
+              {' '}Saving an existing registration number updates that student's details.
             </p>
           </div>
 
@@ -427,7 +496,10 @@ export default function AddStudents({ onChanged }: { onChanged?: () => void }) {
           </div>
 
           <div className="form-actions">
-            <button className="primary-button action-button" disabled={busy}>
+            <button
+              className="primary-button action-button"
+              disabled={busy || !course}
+            >
               <Save size={17} />
               {busy ? 'Saving...' : 'Save Student'}
             </button>
@@ -454,13 +526,14 @@ export default function AddStudents({ onChanged }: { onChanged?: () => void }) {
             </button>
           </div>
 
-          <form className="upload-box" onSubmit={uploadExcel}>
+          <form className="upload-box" onSubmit={prepareExcelUpload}>
             <div>
               <span className="section-kicker">Step 2</span>
               <h2>Upload completed Excel</h2>
               <p>
-                It will be imported into <strong>{courseLabel(course)}</strong>.
-                Existing registration numbers will be updated, not duplicated.
+                {course
+                  ? <>Selected destination: <strong>{courseLabel(course)}</strong>.</>
+                  : <><strong>No destination selected.</strong> Choose Foundation or Intermediate above.</>}
               </p>
             </div>
 
@@ -472,18 +545,91 @@ export default function AddStudents({ onChanged }: { onChanged?: () => void }) {
                 id="student-excel-file"
                 type="file"
                 accept=".xlsx,.xls"
-                onChange={event => setFile(event.target.files?.[0] || null)}
+                onChange={event => {
+                  setFile(event.target.files?.[0] || null)
+                  setConfirmOpen(false)
+                  setPendingRecords([])
+                  setConfirmText('')
+                }}
               />
             </label>
 
             <button
               className="primary-button action-button"
-              disabled={busy || !file}
+              disabled={busy || !file || !course}
             >
               <Upload size={17} />
-              {busy ? 'Importing...' : 'Import Students'}
+              {busy ? 'Checking File...' : 'Continue to Confirmation'}
             </button>
           </form>
+        </div>
+      )}
+
+      {confirmOpen && course && (
+        <div className="confirm-backdrop" role="dialog" aria-modal="true">
+          <div className="confirm-dialog">
+            <button
+              type="button"
+              className="confirm-close"
+              onClick={() => {
+                setConfirmOpen(false)
+                setConfirmText('')
+              }}
+              aria-label="Close confirmation"
+            >
+              <X size={18} />
+            </button>
+
+            <span className="section-kicker">Final confirmation</span>
+            <h2>Are you sure you want to upload in {courseLabel(course)}?</h2>
+            <p>
+              The file contains <strong>{pendingRecords.length}</strong> valid student
+              record{pendingRecords.length === 1 ? '' : 's'}. Existing registration
+              numbers will be updated.
+            </p>
+
+            <div className="confirm-destination">
+              Destination: <strong>{courseLabel(course)}</strong>
+            </div>
+
+            <label className="field confirm-field">
+              <span>
+                Type <strong>{confirmationWord(course)}</strong> to confirm
+              </span>
+              <input
+                value={confirmText}
+                onChange={event => setConfirmText(event.target.value)}
+                placeholder={confirmationWord(course)}
+                autoComplete="off"
+              />
+            </label>
+
+            <div className="confirm-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => {
+                  setConfirmOpen(false)
+                  setConfirmText('')
+                }}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="primary-button confirm-upload-button"
+                onClick={confirmExcelUpload}
+                disabled={
+                  busy ||
+                  confirmText.trim().toUpperCase() !== confirmationWord(course)
+                }
+              >
+                <Upload size={17} />
+                {busy ? 'Uploading...' : `Upload to ${courseLabel(course)}`}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </section>
