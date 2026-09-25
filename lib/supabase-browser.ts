@@ -1,12 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 
-export function createBrowserSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+const defaultUrl = 'https://jdxbgspfwbdpgxolcdsb.supabase.co'
+const defaultPublishableKey = 'sb_publishable_yJxqj05l9Q3G3XE5ewYv2g_k14F7uBQ'
 
-  if (!url || !key) {
-    throw new Error('Supabase browser environment variables are missing.')
-  }
+export function createBrowserSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || defaultUrl
+  const key =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    defaultPublishableKey
 
   return createClient(url, key, {
     auth: {
