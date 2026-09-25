@@ -70,10 +70,10 @@
 .confirm-upload-button{height:40px;display:inline-flex;align-items:center;gap:7px}
 @media(max-width:650px){.confirm-actions{display:grid;grid-template-columns:1fr}.confirm-actions .secondary-button,.confirm-upload-button{width:100%;justify-content:center}}
 
-.chairman-brand{margin:22px 0 0 auto;width:max-content;max-width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid #e2e7ed;border-radius:14px;background:rgba(255,255,255,.88);box-shadow:0 8px 22px rgba(20,32,51,.05)}
+.chairman-brand{position:fixed;right:28px;bottom:24px;z-index:30;width:max-content;max-width:calc(100vw - 32px);display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid #e2e7ed;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 12px 30px rgba(20,32,51,.12);backdrop-filter:blur(8px)}
 .chairman-photo{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #f1d477}
 .chairman-copy{display:grid;gap:1px;line-height:1.15}
 .chairman-copy strong{font-size:11px;letter-spacing:.03em;color:#0b1f3a}
 .chairman-copy span{font-size:10px;color:#7b8796}
 .chairman-wish{margin-left:8px;padding-left:12px;border-left:1px solid #e4e8ee;color:#8a681f;font-size:11px;font-weight:800;font-style:italic;white-space:nowrap}
-@media(max-width:520px){.chairman-brand{margin-left:0;width:100%;justify-content:flex-start}.chairman-wish{margin-left:auto}}
+@media(max-width:520px){.chairman-brand{right:16px;bottom:16px;width:auto;max-width:calc(100vw - 32px);justify-content:flex-start}.chairman-wish{margin-left:auto}}
