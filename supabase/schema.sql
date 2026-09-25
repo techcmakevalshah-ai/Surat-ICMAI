@@ -57,3 +57,78 @@ alter table public.intermediate_students enable row level security;
 revoke all on table public.team_profiles from anon, authenticated;
 revoke all on table public.foundation_students from anon, authenticated;
 revoke all on table public.intermediate_students from anon, authenticated;
+
+
+grant select, insert, update on table public.foundation_students to authenticated;
+grant select, insert, update on table public.intermediate_students to authenticated;
+grant select on table public.team_profiles to authenticated;
+
+create policy "team_member_can_read_own_profile"
+  on public.team_profiles for select to authenticated
+  using (id = auth.uid());
+
+create policy "active_team_can_read_foundation"
+  on public.foundation_students for select to authenticated
+  using (
+    exists (
+      select 1 from public.team_profiles tp
+      where tp.id = auth.uid() and tp.active = true
+    )
+  );
+
+create policy "active_team_can_insert_foundation"
+  on public.foundation_students for insert to authenticated
+  with check (
+    exists (
+      select 1 from public.team_profiles tp
+      where tp.id = auth.uid() and tp.active = true
+    )
+  );
+
+create policy "active_team_can_update_foundation"
+  on public.foundation_students for update to authenticated
+  using (
+    exists (
+      select 1 from public.team_profiles tp
+      where tp.id = auth.uid() and tp.active = true
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.team_profiles tp
+      where tp.id = auth.uid() and tp.active = true
+    )
+  );
+
+create policy "active_team_can_read_intermediate"
+  on public.intermediate_students for select to authenticated
+  using (
+    exists (
+      select 1 from public.team_profiles tp
+      where tp.id = auth.uid() and tp.active = true
+    )
+  );
+
+create policy "active_team_can_insert_intermediate"
+  on public.intermediate_students for insert to authenticated
+  with check (
+    exists (
+      select 1 from public.team_profiles tp
+      where tp.id = auth.uid() and tp.active = true
+    )
+  );
+
+create policy "active_team_can_update_intermediate"
+  on public.intermediate_students for update to authenticated
+  using (
+    exists (
+      select 1 from public.team_profiles tp
+      where tp.id = auth.uid() and tp.active = true
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.team_profiles tp
+      where tp.id = auth.uid() and tp.active = true
+    )
+  );
