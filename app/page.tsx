@@ -6,19 +6,23 @@ import {
   CalendarDays,
   CheckCircle2,
   Copy,
+  Database,
   GraduationCap,
   Hash,
   LogOut,
   Mail,
   MapPin,
   Phone,
+  PlusCircle,
   Search,
   ShieldCheck,
   UserPlus,
 } from 'lucide-react'
+import AddStudents from '@/app/AddStudents'
 import { createBrowserSupabase } from '@/lib/supabase-browser'
 
 type Level = 'foundation' | 'intermediate' | 'all'
+type View = 'search' | 'add'
 
 type Student = {
   id: number
@@ -99,13 +103,31 @@ export default function Home() {
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [view, setView] = useState<View>('search')
   const [level, setLevel] = useState<Level>('foundation')
+  const [counts, setCounts] = useState({ foundation: 870, intermediate: 290 })
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Student[]>([])
   const [selected, setSelected] = useState<Student | null>(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null)
   const [copied, setCopied] = useState('')
+
+  async function loadCounts() {
+    const [foundation, intermediate] = await Promise.all([
+      supabase
+        .from('foundation_students')
+        .select('id', { count: 'exact', head: true }),
+      supabase
+        .from('intermediate_students')
+        .select('id', { count: 'exact', head: true }),
+    ])
+
+    setCounts({
+      foundation: foundation.count ?? 0,
+      intermediate: intermediate.count ?? 0,
+    })
+  }
 
   async function refreshAccess(userId?: string, emailValue?: string) {
     if (!userId) {
@@ -147,6 +169,10 @@ export default function Home() {
     }
   }, [supabase])
 
+  useEffect(() => {
+    if (authorized) void loadCounts()
+  }, [authorized])
+
   async function authenticate(event: FormEvent) {
     event.preventDefault()
     setLoading(true)
@@ -157,7 +183,6 @@ export default function Home() {
         email: email.trim().toLowerCase(),
         password,
       })
-
       setLoading(false)
 
       if (error) {
@@ -166,7 +191,6 @@ export default function Home() {
       }
 
       setPassword('')
-
       if (data.session) {
         setMessage({
           type: 'success',
@@ -188,12 +212,10 @@ export default function Home() {
     })
 
     setLoading(false)
-
     if (error) {
       setMessage({ type: 'error', text: 'Invalid email or password.' })
       return
     }
-
     setPassword('')
   }
 
@@ -203,6 +225,7 @@ export default function Home() {
     setSelected(null)
     setQuery('')
     setMessage(null)
+    setView('search')
   }
 
   function changeLevel(next: Level) {
@@ -234,7 +257,6 @@ export default function Home() {
 
     const responses = await Promise.all(searches)
     const firstError = responses.find(item => item.error)?.error
-
     if (firstError) throw firstError
 
     const byId = new Map<number, Row>()
@@ -262,11 +284,9 @@ export default function Home() {
 
     try {
       const tasks: Promise<Student[]>[] = []
-
       if (level === 'foundation' || level === 'all') {
         tasks.push(searchOne('foundation_students', 'FOUNDATION', term))
       }
-
       if (level === 'intermediate' || level === 'all') {
         tasks.push(searchOne('intermediate_students', 'INTERMEDIATE', term))
       }
@@ -277,7 +297,6 @@ export default function Home() {
         .slice(0, 40)
 
       setResults(students)
-
       if (students.length === 1) setSelected(students[0])
       if (!students.length) {
         setMessage({ type: 'error', text: 'No matching student found.' })
@@ -316,9 +335,7 @@ export default function Home() {
           </div>
 
           <div className="login-copy">
-            <span className="eyebrow">
-              <ShieldCheck size={15} /> Authorized access
-            </span>
+            <span className="eyebrow"><ShieldCheck size={15} /> Authorized access</span>
             <h1>{authMode === 'login' ? 'Team Login' : 'Create Account'}</h1>
             <p>
               {authMode === 'login'
@@ -330,40 +347,22 @@ export default function Home() {
           <form className="form" onSubmit={authenticate}>
             <label>
               <span>Email</span>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-              />
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
             </label>
-
             <label>
               <span>Password</span>
-              <input
-                type="password"
-                minLength={8}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-              />
+              <input type="password" minLength={8} value={password} onChange={e => setPassword(e.target.value)} required />
             </label>
 
             {message && (
               <div className={`message ${message.type}`}>
-                {message.type === 'success'
-                  ? <CheckCircle2 size={17} />
-                  : <AlertCircle size={17} />}
+                {message.type === 'success' ? <CheckCircle2 size={17} /> : <AlertCircle size={17} />}
                 {message.text}
               </div>
             )}
 
             <button className="primary-button" disabled={loading}>
-              {loading
-                ? 'Please wait...'
-                : authMode === 'login'
-                  ? 'Login'
-                  : 'Create Account'}
+              {loading ? 'Please wait...' : authMode === 'login' ? 'Login' : 'Create Account'}
             </button>
           </form>
 
@@ -376,9 +375,7 @@ export default function Home() {
             }}
           >
             <UserPlus size={15} />
-            {authMode === 'login'
-              ? 'Create a new team account'
-              : 'Back to login'}
+            {authMode === 'login' ? 'Create a new team account' : 'Back to login'}
           </button>
 
           <div className="security-note">No public student access</div>
@@ -398,19 +395,11 @@ export default function Home() {
               <span>{userEmail}</span>
             </div>
           </div>
-
           <div className="login-copy">
             <h1>Account created</h1>
-            <p>
-              Your login is valid, but this account has not yet been approved
-              for student database access.
-            </p>
+            <p>Your login is valid, but this account has not yet been approved for student database access.</p>
           </div>
-
-          <button className="secondary-button" onClick={logout}>
-            <LogOut size={16} />
-            Logout
-          </button>
+          <button className="secondary-button" onClick={logout}><LogOut size={16} />Logout</button>
         </section>
       </main>
     )
@@ -427,170 +416,166 @@ export default function Home() {
           </div>
         </div>
 
-        <button className="secondary-button" onClick={logout}>
-          <LogOut size={16} />
-          Logout
-        </button>
+        <div className="top-actions">
+          <nav className="app-nav">
+            <button
+              className={view === 'search' ? 'active' : ''}
+              onClick={() => setView('search')}
+            >
+              <Database size={16} />
+              Search
+            </button>
+            <button
+              className={view === 'add' ? 'active' : ''}
+              onClick={() => setView('add')}
+            >
+              <PlusCircle size={16} />
+              Add Students
+            </button>
+          </nav>
+          <button className="secondary-button" onClick={logout}><LogOut size={16} />Logout</button>
+        </div>
       </header>
 
-      <section className="content">
-        <div className="hero-copy">
-          <span className="eyebrow">
-            <ShieldCheck size={15} /> Surat ICMAI database
-          </span>
-          <h1>Find a student</h1>
-          <p>
-            Select the database first, then search by name, mobile, or
-            registration number.
-          </p>
-        </div>
-
-        <section className="finder-card">
-          <div className="database-tabs">
-            <button
-              type="button"
-              className={level === 'foundation' ? 'active' : ''}
-              onClick={() => changeLevel('foundation')}
-            >
-              Foundation
-              <span>870 students</span>
-            </button>
-
-            <button
-              type="button"
-              className={level === 'intermediate' ? 'active' : ''}
-              onClick={() => changeLevel('intermediate')}
-            >
-              Intermediate
-              <span>290 students</span>
-            </button>
-
-            <button
-              type="button"
-              className={level === 'all' ? 'active' : ''}
-              onClick={() => changeLevel('all')}
-            >
-              All
-              <span>Both databases</span>
-            </button>
-          </div>
-
-          <form className="search-form" onSubmit={searchStudents}>
-            <div className="search-input">
-              <Search size={19} />
-              <input
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Name, mobile or registration no."
-                autoComplete="off"
-              />
+      <section className={`content ${view === 'add' ? 'content-wide' : ''}`}>
+        {view === 'search' ? (
+          <>
+            <div className="hero-copy">
+              <span className="eyebrow"><ShieldCheck size={15} /> Surat ICMAI database</span>
+              <h1>Find a student</h1>
+              <p>Select the database first, then search by name, mobile, or registration number.</p>
             </div>
 
-            <button className="primary-button search-button" disabled={loading}>
-              {loading ? 'Searching...' : 'Search'}
-            </button>
-          </form>
+            <section className="finder-card">
+              <div className="database-tabs">
+                <button
+                  type="button"
+                  className={level === 'foundation' ? 'active' : ''}
+                  onClick={() => changeLevel('foundation')}
+                >
+                  Foundation
+                  <span>{counts.foundation} students</span>
+                </button>
 
-          {message && (
-            <div className={`message ${message.type} result-message`}>
-              <AlertCircle size={17} />
-              {message.text}
-            </div>
-          )}
+                <button
+                  type="button"
+                  className={level === 'intermediate' ? 'active' : ''}
+                  onClick={() => changeLevel('intermediate')}
+                >
+                  Intermediate
+                  <span>{counts.intermediate} students</span>
+                </button>
 
-          {!!results.length && (
-            <div className="results">
-              <div className="results-label">
-                {results.length} match{results.length === 1 ? '' : 'es'}
+                <button
+                  type="button"
+                  className={level === 'all' ? 'active' : ''}
+                  onClick={() => changeLevel('all')}
+                >
+                  All
+                  <span>{counts.foundation + counts.intermediate} students</span>
+                </button>
               </div>
 
-              {results.map(student => (
-                <button
-                  key={`${student.source}-${student.id}`}
-                  className={`result-row ${
-                    selected?.id === student.id &&
-                    selected?.source === student.source
-                      ? 'selected'
-                      : ''
-                  }`}
-                  onClick={() => setSelected(student)}
-                >
-                  <div>
-                    <strong>{student.studentName}</strong>
-                    <span>
-                      {sourceLabel(student.source)} · {student.registrationNumber}
-                    </span>
-                  </div>
-                  <span>{student.mobile || 'No mobile'}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {selected && (
-            <div className="details">
-              <div className="details-head">
-                <div>
-                  <span className="source-badge">
-                    {sourceLabel(selected.source)}
-                  </span>
-                  <h2>{selected.studentName}</h2>
-                  <p>
-                    {selected.fatherHusbandName ||
-                      'Father / Husband name unavailable'}
-                  </p>
+              <form className="search-form" onSubmit={searchStudents}>
+                <div className="search-input">
+                  <Search size={19} />
+                  <input
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
+                    placeholder="Name, mobile or registration no."
+                    autoComplete="off"
+                  />
                 </div>
-
-                <button
-                  className="secondary-button"
-                  onClick={() => copyRegistration(selected.registrationNumber)}
-                >
-                  {copied === selected.registrationNumber
-                    ? <CheckCircle2 size={16} />
-                    : <Copy size={16} />}
-                  {copied === selected.registrationNumber
-                    ? 'Copied'
-                    : 'Copy Registration'}
+                <button className="primary-button search-button" disabled={loading}>
+                  {loading ? 'Searching...' : 'Search'}
                 </button>
-              </div>
+              </form>
 
-              <div className="detail-grid">
-                <Detail
-                  icon={<Hash size={17} />}
-                  label="Registration Number"
-                  value={selected.registrationNumber}
-                />
-                <Detail
-                  icon={<Phone size={17} />}
-                  label="Registered Mobile"
-                  value={selected.mobile || '—'}
-                />
-                <Detail
-                  icon={<CalendarDays size={17} />}
-                  label="Date of Birth"
-                  value={formatDate(selected.dateOfBirth)}
-                />
-                <Detail
-                  icon={<Mail size={17} />}
-                  label="Email"
-                  value={selected.email || '—'}
-                />
-                <Detail
-                  wide
-                  icon={<MapPin size={17} />}
-                  label="Address"
-                  value={[
-                    selected.address1,
-                    selected.address2,
-                    selected.address3,
-                    selected.city,
-                    selected.pinCode,
-                  ].filter(Boolean).join(', ') || '—'}
-                />
-              </div>
+              {message && (
+                <div className={`message ${message.type} result-message`}>
+                  <AlertCircle size={17} />
+                  {message.text}
+                </div>
+              )}
+
+              {!!results.length && (
+                <div className="results">
+                  <div className="results-label">
+                    {results.length} match{results.length === 1 ? '' : 'es'}
+                  </div>
+
+                  {results.map(student => (
+                    <button
+                      key={`${student.source}-${student.id}`}
+                      className={`result-row ${
+                        selected?.id === student.id && selected?.source === student.source
+                          ? 'selected'
+                          : ''
+                      }`}
+                      onClick={() => setSelected(student)}
+                    >
+                      <div>
+                        <strong>{student.studentName}</strong>
+                        <span>{sourceLabel(student.source)} · {student.registrationNumber}</span>
+                      </div>
+                      <span>{student.mobile || 'No mobile'}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {selected && (
+                <div className="details">
+                  <div className="details-head">
+                    <div>
+                      <span className="source-badge">{sourceLabel(selected.source)}</span>
+                      <h2>{selected.studentName}</h2>
+                      <p>{selected.fatherHusbandName || 'Father / Husband name unavailable'}</p>
+                    </div>
+
+                    <button
+                      className="secondary-button"
+                      onClick={() => copyRegistration(selected.registrationNumber)}
+                    >
+                      {copied === selected.registrationNumber
+                        ? <CheckCircle2 size={16} />
+                        : <Copy size={16} />}
+                      {copied === selected.registrationNumber ? 'Copied' : 'Copy Registration'}
+                    </button>
+                  </div>
+
+                  <div className="detail-grid">
+                    <Detail icon={<Hash size={17} />} label="Registration Number" value={selected.registrationNumber} />
+                    <Detail icon={<Phone size={17} />} label="Registered Mobile" value={selected.mobile || '—'} />
+                    <Detail icon={<CalendarDays size={17} />} label="Date of Birth" value={formatDate(selected.dateOfBirth)} />
+                    <Detail icon={<Mail size={17} />} label="Email" value={selected.email || '—'} />
+                    <Detail
+                      wide
+                      icon={<MapPin size={17} />}
+                      label="Address"
+                      value={[
+                        selected.address1,
+                        selected.address2,
+                        selected.address3,
+                        selected.city,
+                        selected.pinCode,
+                      ].filter(Boolean).join(', ') || '—'}
+                    />
+                  </div>
+                </div>
+              )}
+            </section>
+          </>
+        ) : (
+          <>
+            <div className="hero-copy">
+              <span className="eyebrow"><PlusCircle size={15} /> Student management</span>
+              <h1>Add students</h1>
+              <p>Add one student manually or import multiple students using the website's blank Excel format.</p>
             </div>
-          )}
-        </section>
+            <AddStudents onChanged={loadCounts} />
+          </>
+        )}
       </section>
     </main>
   )
